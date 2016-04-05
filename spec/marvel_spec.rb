@@ -3,18 +3,28 @@ require_relative 'spec_helper.rb'
 require_relative '../marvel.rb'
 
 RSpec.describe Marvel do
+  before(:all) do
+    @marvel = Marvel.new(
+      private_key: '123_fake_key'
+    )
+  end
+
   describe '#auth_params' do
     it 'returns auth params for a given user' do
-      private_key = '123abc'
-
-      marvel = Marvel.new(
-       private_key: private_key
-      )
-
       expected_pattern = /\?ts=\d+&apikey=\w{32}&hash=\w{32}/
 
-      auth_params = marvel.send(:auth_params)
+      auth_params = @marvel.send(:auth_params)
       expect(auth_params).to match(expected_pattern)
+    end
+  end
+
+  describe '#to_csv' do
+    it 'transforms and array of comic ids into encoded string' do
+      comic_ids = [123,456,678]
+
+      encoded_ids = @marvel.send(:to_csv, comic_ids)
+
+      expect(encoded_ids).to eq('123,456,678')
     end
   end
 
@@ -23,7 +33,7 @@ RSpec.describe Marvel do
       stub = stub_request(
         :get, /http:\/\/gateway.marvel.com\/v1\/public\/characters\?apikey=.*/)
 
-      Marvel.new.get_the_characters
+      @marvel.get_the_characters
 
       expect(stub).to have_been_requested
     end
