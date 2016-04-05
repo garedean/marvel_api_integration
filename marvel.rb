@@ -11,9 +11,10 @@
 # - Return updated code and steps to generate answers in email attachment.
 
 require 'digest/md5'
-require "net/http"
-require "uri"
+require 'net/http'
+require 'uri'
 require 'byebug'
+require 'JSON'
 require 'dotenv'
 Dotenv.load
 
@@ -25,51 +26,83 @@ class Marvel
     @private_key = private_key
   end
 
-  def get_the_characters
-    uri = URI.parse(
-      "http://gateway.marvel.com/v1/public/characters#{auth_params}")
+  def get_character_count
+    get_the_characters['data']['total']
+  end
 
-    @response = Net::HTTP.get_response(uri)
-    @response.body
+  # Example ID: 1011136
+  def get_character_thumbnail(id)
+    single_character_response = make_api_call(
+      "http://gateway.marvel.com/v1/public/characters/#{id}#{auth_params}")
+    build_thumbnail_url(single_character_response)
+  end
+
+  def get_the_characters
+    make_api_call(
+      "http://gateway.marvel.com/v1/public/characters#{auth_params}")
   rescue
     nil
   end
 
-def people_in_comics(comic_ids_array = [])
+  def people_in_comics(comic_ids_array = [])
     comic_ids = to_csv(comic_ids_array)
-    uri = URI.parse("http://gateway.marvel.com")
-    http = Net::HTTP.new(uri.host, uri.port)
 
-    request = Net::HTTP::Get.new(
-      "/v1/public/characters#{auth_params}&limit=1&comics=#{comic_ids}")
+    parsed_response = make_api_call(
+      "http://gateway.marvel.com/v1/public/characters"\
+      "#{auth_params}&comics=#{comic_ids}")
 
-    @response = http.request(request)
-    @response.body
+    output_character_names(parsed_response)
   end
 
   private
 
+  def make_api_call(target_uri)
+    uri = URI.parse(target_uri)
+
+    response = Net::HTTP.get_response(uri)
+
+    parsed_response(response)
+  end
+
+  def parsed_response(response)
+    JSON.parse(response.body)
+  end
+
   def auth_params
-    ts   = Time.now.to_i
-    hash = Digest::MD5.hexdigest("#{ts}#{@private_key}#{@public_key}")
-    "?ts=#{ts}&apikey=#{@public_key}&hash=#{hash}"
+    time_stamp = Time.now.to_i
+
+    hash = Digest::MD5.hexdigest("#{time_stamp}#{@private_key}#{@public_key}")
+
+    "?ts=#{time_stamp}&apikey=#{@public_key}&hash=#{hash}"
   end
 
   def to_csv(array)
-    output = ''
-    is_first = true
+    array.join(',')
+  end
 
-    array.each do |x|
-      unless is_first
-        output = output + ','
-      end
-      output = output + x.to_s
-      is_first = false
-      end
-    return output
+  def build_hash(time_stamp)
+    Digest::MD5.hexdigest("#{time_stamp}#{@private_key}#{@public_key}")
+  end
+
+  def build_thumbnail_url(single_character_response)
+    thumbnail_blob = single_character_response['data']['results']
+      .first['thumbnail']
+
+    path      = thumbnail_blob['path']
+    extension = thumbnail_blob['extension']
+
+    "#{path}.#{extension}"
+  end
+
+  def output_character_names(parsed_response)
+    parsed_response['data']['results'].map do |character|
+      character['name']
+    end
   end
 end
 
-# puts Marvel.new.get_the_characters
-#comic_ids = [31068, 20367]
-# puts people_in_comics(comic_ids)
+#puts Marvel.new.get_the_characters
+# comic_ids = [30090, 160]
+# puts Marvel.new.people_in_comics(comic_ids)
+# puts Marvel.new.get_character_count
+# puts Marvel.new.get_character_thumbnail(1011136)
