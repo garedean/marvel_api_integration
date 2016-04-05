@@ -65,7 +65,9 @@ class Marvel
   end
 
   def parsed_response(response)
-    JSON.parse(response.body)
+    response = JSON.parse(response.body)
+    validate_response(response)
+    response
   end
 
   def auth_params
@@ -99,9 +101,15 @@ class Marvel
       character['name']
     end
   end
+
+  def validate_response(response)
+    response_code   = response['code']
+    response_status = response['status']
+    raise response_status unless response_code == 200
+  end
 end
 
-#puts Marvel.new.get_the_characters
+# puts Marvel.new.get_the_characters
 # comic_ids = [30090, 160]
 # puts Marvel.new.people_in_comics(comic_ids)
 # puts Marvel.new.get_character_count

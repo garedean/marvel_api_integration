@@ -1,6 +1,6 @@
 require 'rspec'
 require_relative 'spec_helper.rb'
-require_relative '../marvel.rb'
+require_relative '../lib/marvel.rb'
 
 RSpec.describe Marvel do
   before(:all) do
@@ -29,28 +29,14 @@ RSpec.describe Marvel do
   end
 
   describe '#get_the_characters' do
-    it 'calls the Marvel api' do
+    it 'calls the api then returns body' do
       stub = stub_request(
-        :get, /http:\/\/gateway.marvel.com\/v1\/public\/characters\?apikey=\w+&hash=\w+&ts=\d+/).to_return(:body => 'abc')
+        :get, /http:\/\/gateway.marvel.com\/v1\/public\/characters\?apikey=\w+&hash=\w+&ts=\d+/).to_return(:body => "{\"code\":200}")
 
-      response_body = @marvel.get_the_characters
+      parsed_response = @marvel.get_the_characters
 
       expect(stub).to have_been_requested
-      expect(response_body).to eq('abc')
-    end
-  end
-
-  describe '#people_in_comics' do
-    it 'calls the Marvel api' do
-      comic_ids = [123,456,789]
-
-      stub = stub_request(
-        :get, /http:\/\/gateway.marvel.com\/v1\/public\/characters\?apikey=\w+&comics=.+&hash=\w+&ts=\d+/).to_return(:body => 'abc')
-
-      response_body = @marvel.people_in_comics(comic_ids)
-
-      expect(stub).to have_been_requested
-      expect(response_body).to eq('abc')
+      expect(parsed_response).to eq({ 'code' => 200 })
     end
   end
 end
