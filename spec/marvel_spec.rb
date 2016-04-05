@@ -31,11 +31,26 @@ RSpec.describe Marvel do
   describe '#get_the_characters' do
     it 'calls the Marvel api' do
       stub = stub_request(
-        :get, /http:\/\/gateway.marvel.com\/v1\/public\/characters\?apikey=.*/)
+        :get, /http:\/\/gateway.marvel.com\/v1\/public\/characters\?apikey=\w+&hash=\w+&ts=\d+/).to_return(:body => 'abc')
 
-      @marvel.get_the_characters
+      response_body = @marvel.get_the_characters
 
       expect(stub).to have_been_requested
+      expect(response_body).to eq('abc')
+    end
+  end
+
+  describe '#people_in_comics' do
+    it 'calls the Marvel api' do
+      comic_ids = [123,456,789]
+
+      stub = stub_request(
+        :get, /http:\/\/gateway.marvel.com\/v1\/public\/characters\?apikey=\w+&comics=.+&hash=\w+&ts=\d+/).to_return(:body => 'abc')
+
+      response_body = @marvel.people_in_comics(comic_ids)
+
+      expect(stub).to have_been_requested
+      expect(response_body).to eq('abc')
     end
   end
 end
