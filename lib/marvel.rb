@@ -108,9 +108,3 @@ class Marvel
     raise response_status unless response_code == 200
   end
 end
-
-# puts Marvel.new.get_the_characters
-# comic_ids = [30090, 160]
-# puts Marvel.new.people_in_comics(comic_ids)
-# puts Marvel.new.get_character_count
-# puts Marvel.new.get_character_thumbnail(1011136)
